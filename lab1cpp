@@ -1,0 +1,98 @@
+//lab1 using c++. 
+// Deliverables
+// Using SIR model validate RK4 converges quicker than RK2 and Euler's method.
+// expand SIR model to account for more variables to repesent a more relistic epidemic
+
+#include "Epidemic.h"
+#include <iostream>
+#include <fstream>
+
+using namespace std;
+
+
+
+int main()
+{
+	// Defining output file for matlab (from https://cplusplus.com/doc/tutorial/files/)
+	ofstream myfile;
+
+	myfile.open("data.txt", ios::out | ios::app);
+	// n sets up the array size and duration of the model
+	const int n = 100;
+	double S[n];
+	double I[n];
+	double R[n];
+	double D[n];
+	//defining intial conditions
+	S[0] = 10000;
+	I[0] = 1;
+	R[0] = 0;
+	D[0] = 0;
+	// defining disease variables
+	double gamma = 10;
+	double R0 = 2.0;
+	double beta = R0 / (gamma * (I[0] * S[0]));
+	double alpha = 10000000000000;
+	double epsilon = 0;
+	double f = .01;
+	double  ds, di, dr, dD;
+	double dt = 150.0 / n;
+	myfile.open("eular.txt", ios::out | ios::app);
+	if (myfile.is_open()) {
+		myfile << S[0] << " ";
+		myfile << I[0] << " ";
+		myfile << R[0] << endl;
+
+	}
+	else {
+		cout << "File wasnt opeded";
+	}
+
+
+	// for loop to handle eulers method.
+	for (int j = 1;j < n;j++) {
+
+		ds = -beta * S[j - 1] * I[j - 1] + (1.0 / alpha) * R[j - 1] + epsilon;
+		di = beta * S[j - 1] * I[j - 1] - (1.0 / gamma) * I[j - 1];
+		dr = (1 / gamma) * (1 - f) * I[j - 1] - (1.0 / alpha) * R[j - 1];
+		dD = (1 / gamma) * f * I[j - 1];
+
+		S[j] = S[j - 1] + ds * dt;
+		I[j] = I[j - 1] + di * dt;
+		R[j] = R[j - 1] + dr * dt;
+
+
+	}
+	for (int j = 0;j < n;j++) {
+
+		cout << j * dt << ", " << S[j] << ",	" << I[j] << ",	" << R[j] << endl;
+		myfile << S[j] << "	" << I[j] << "	" << R[j] << endl;
+	}
+	myfile.close();
+
+
+	double h = dt / 2;
+	//Start of RK2
+	// for loop to handle RK2 method.
+	for (int j = 1;j < n;j++) {
+
+		ds = -beta * S[j - 1] * I[j - 1] + (1.0 / alpha) * R[j - 1] + epsilon;
+		di = beta * S[j - 1] * I[j - 1] - (1.0 / gamma) * I[j - 1];
+		dr = (1 / gamma) * (1 - f) * I[j - 1] - (1.0 / alpha) * R[j - 1];
+		dD = (1 / gamma) * f * I[j - 1];
+
+		S[j] = S[j - 1] + ds * h;
+		I[j] = I[j - 1] + di * h;
+		R[j] = R[j - 1] + dr * h;
+
+		ds = -beta * S[j] * I[j] + (1.0 / alpha) * R[j] + epsilon;
+		di = beta * S[j] * I[j] - (1.0 / gamma) * I[j];
+		dr = (1 / gamma) * (1 - f) * I[j] - (1.0 / alpha) * R[j];
+		dD = (1 / gamma) * f * I[j];
+
+		S[j] = S[j - 1] + ds * dt;
+		I[j] = I[j - 1] + di * dt;
+		R[j] = R[j - 1] + dr * dt;
+	}
+	return 0;
+}
