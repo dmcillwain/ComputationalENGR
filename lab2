@@ -1,0 +1,633 @@
+#include "projecttwo.h"
+
+using namespace std;
+const int n = 3;
+const int Time = 1;
+const double dT = .1;
+const int tTotal = 5;
+void montiecarloVelocities(double v[n * n * n], double signs[n * n * n], double big, double m, double kb, double T) {
+	for (int i = 0;i <= n * n * n - 1;i++) {
+		bool accept = false;
+		while (accept == false) {
+			double v1 = ((rand() % 100 + 1) / 100.0) - .5;
+			double v2 = ((rand() % 100 + 1) / 100.0);
+			double v3 = ((rand() % 100 + 1) / 100.0) - .5;
+			signs[i] = v1;
+			v[i] = v2 * big;
+			v[i] = v[i] * signs[i];
+			double P = exp((-.5 * m * v[i] * v[i]) / (kb * T));
+			double temp = v3;
+			if (temp < P) {
+				accept = true;
+			}
+		}
+	}
+}
+	void intialConditions(double X[n * n * n][10], double Y[n * n * n][10], double Z[n * n * n][10], double v[n * n * n]) {
+
+		//setting positions and velocities
+		for (int i = 0;i <= n - 1;i++) {
+			for (int j = 0;j <= n - 1;j++) {
+				for (int l = 0; l <= n - 1;l++) {
+					int index = i * n * n + j * n + l;
+
+					X[index][0] = i;
+					Y[index][0] = j;
+					Z[index][0] = l;
+
+					X[index][1] = X[index][0] + v[index] * .000001 * dT;
+					Y[index][1] = Y[index][0] + v[index] * .000001 * dT;
+					Z[index][1] = Z[index][0] + v[index] * .000001 * dT;
+
+					//double KE = KE + ((m * v[index] * v[index]) / 2) * ((m * v[index] * v[index]) / 2) * ((m * v[index] * v[index]) / 2);
+					//cout << index << " 0: (" << X[index][0] << "," << Y[index][0] << "," << Z[index][0] << ")" << endl;
+					//cout << index << " 1: (" << X[index][1] << ", " << Y[index][1] << ", " << Z[index][1] << ")" << endl;
+
+				}
+			}
+		}
+
+	}
+
+	void VerletMethod(double X[n*n*n][10],double Y[n*n*n][10], double Z[n * n * n][10], int index,int steps, double Fx,double Fy, double Fz,double m) {
+		double ax = Fx / m;
+		double ay = Fy / m;
+		double az = Fz / m;
+
+		X[index][steps] = 2 * X[index][steps-1] - X[index][steps-2]* + ax*dT*dT;
+		Y[index][steps] = 2 * Y[index][steps - 1] - Y[index][steps - 2] + ay * dT * dT;
+		Z[index][steps] = 2 * Z[index][steps - 1] - Z[index][steps-2] + az * dT * dT;
+		Fx = 0;
+		Fy = 0;
+		Fz = 0;
+
+	}
+	void ForceCalculation(double Fx, double Fy, double Fz, int index, int steps, double Xc, double Yc, double Zc) {
+
+		double ld = 1.0;
+		double Kc = 1.0;
+
+		double L = sqrt((Xc * Xc) + (Yc * Yc) + (Zc * Zc));
+
+		double Fs = (L - ld) * Kc;
+		Fx = Fx + (Xc / L) * Fs * dT;
+		Fy = Fy + (Yc / L) * Fs * dT;
+		Fz = Fz + (Zc / L) * Fs * dT;
+		//cout << "Index: "<< index << " Fs: " << Fs<< " Xc: " << Xc << " Fx: " << Fx << " Yc: " << Yc << " Fy: " << Fy << " Zc: " << Zc << " Fz: " << Fz << endl;
+	}
+
+	void Minus1Neighbors(double X[n * n * n][10], double Y[n * n * n][10], double Z[n * n * n][10], int index, int steps, double Fx, double Fy, double Fz) {
+		double Xc = 0;
+		double Yc = 0;
+		double Zc = 0;
+		 Xc = X[index][steps - 1] - X[index - 1][steps - 1];
+		 Yc = Y[index][steps - 1] - Y[index - 1][steps - 1];
+		 Zc = Z[index][steps - 1] - Z[index - 1][steps - 1];
+
+		ForceCalculation(Fx, Fy, Fz, index, steps, Xc, Yc, Zc);
+	}
+	void Plus1Neighbor(double X[n * n * n][10], double Y[n * n * n][10], double Z[n * n * n][10], int index, int steps, double Fx, double Fy, double Fz) {
+		double Xc = 0;
+		double Yc = 0;
+		double Zc = 0;
+		 Xc = X[index][steps - 1] - X[index + 1][steps - 1];
+		 Yc = Y[index][steps - 1] - Y[index + 1][steps - 1];
+		 Zc = Z[index][steps - 1] - Z[index + 1][steps - 1];
+
+		ForceCalculation(Fx, Fy, Fz, index, steps, Xc, Yc, Zc);
+	}
+	void MinusNNeighbor(double X[n * n * n][10], double Y[n * n * n][10], double Z[n * n * n][10], int index, int steps, double Fx, double Fy, double Fz) {
+		double Xc = 0;
+		double Yc = 0;
+		double Zc = 0;
+		 Xc = X[index][steps - 1] - X[index - n][steps - 1];
+		 Yc = Y[index][steps - 1] - Y[index - n][steps - 1];
+		 Zc = Z[index][steps - 1] - Z[index - n][steps - 1];
+
+		ForceCalculation(Fx, Fy, Fz, index, steps, Xc, Yc, Zc);
+	}
+	void PlusNNeighbor(double X[n * n * n][10], double Y[n * n * n][10], double Z[n * n * n][10], int index, int steps, double Fx, double Fy, double Fz) {
+		double Xc = 0;
+		double Yc = 0;
+		double Zc = 0;
+		 Xc = X[index][steps - 1] - X[index +n][steps - 1];
+		 Yc = Y[index][steps - 1] - Y[index +n][steps - 1];
+		 Zc = Z[index][steps - 1] - Z[index +n][steps - 1];
+
+		ForceCalculation(Fx, Fy, Fz, index, steps, Xc, Yc, Zc);
+	}
+	void MinusN2Neighbor(double X[n * n * n][10], double Y[n * n * n][10], double Z[n * n * n][10], int index, int steps, double Fx, double Fy, double Fz) {
+		double Xc = 0;
+		double Yc = 0;
+		double Zc = 0;
+		 Xc = X[index][steps - 1] - X[index - (n*n)][steps - 1];
+		 Yc = Y[index][steps - 1] - Y[index - (n * n)][steps - 1];
+		 Zc = Z[index][steps - 1] - Z[index - (n * n)][steps - 1];
+		
+		ForceCalculation(Fx, Fy, Fz, index, steps, Xc, Yc, Zc);
+	}
+	void PlusN2Neighbor(double X[n * n * n][10], double Y[n * n * n][10], double Z[n * n * n][10], int index, int steps, double Fx, double Fy, double Fz) {
+		double Xc = 0;
+		double Yc = 0;
+		double Zc = 0;
+	 Xc = X[index][steps - 1] - X[index + (n * n)][steps - 1];
+	 Yc = Y[index][steps - 1] - Y[index + (n * n)][steps - 1];
+	 Zc = Z[index][steps - 1] - Z[index + (n * n)][steps - 1];
+
+	ForceCalculation(Fx, Fy, Fz, index, steps, Xc, Yc, Zc);
+	}
+	
+	int main()
+	{
+		int index = 0;
+		double X[n * n * n][10];
+		double Y[n * n * n][10];
+		double Z[n * n * n][10];
+		double Fx = 0;
+		double Fy = 0;
+		double Fz = 0;
+		double v[n * n * n] = { 0 };
+
+		double signs[n * n * n] = { 0 };
+		double big = 1000.0;
+		double kb = pow(10.0, -23.0) * 1.3806;
+		double T = 300;
+		double m = (pow(10.0, -3.0) * 55.845) / pow(10.0, 23.0) * 6.0221;;
+
+		montiecarloVelocities(v, signs, big, m, kb, T);
+
+		intialConditions(X, Y, Z, v);
+		for (int l = 2; l <= 5; l++) {
+
+
+			// body calculations
+			for (int i = 1;i < n - 1;i++) {
+
+				for (int j = 1; j < n - 1;j++) {
+
+					for (int k = 1; k < n - 1;k++) {
+						// reseting forces and changing index each loop
+						Fx = Fy = Fz = 0;
+						index = (i * n * n) + (j * n) + (k);
+						cout << index << endl;
+						// -1
+						Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+						// +1
+						Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+						//-n 
+						MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+						//+n 
+						PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+						//-n*n
+						MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+						//+n*n
+						PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+
+						VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+
+						//cout << Fx << " " << Fy << " " << Fz << endl;
+					}
+				}
+			}
+
+			// all faces
+			// i = 0
+			for (int j = 1;j < n - 1;j++) {
+				for (int k = 1; k < n - 1;k++) {
+					int i = 0;
+					Fx = Fy = Fz = 0;
+					index = (i * n * n) + (j * n) + (k);
+					cout << index << endl;
+					Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+					PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					// minusN2Neighbor
+					VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				}
+			}
+			// i = n
+			for (int j = 1;j < n - 1;j++) {
+				for (int k = 1; k < n - 1;k++) {
+					int i = n-1;
+					Fx = Fy = Fz = 0;
+					index = (i * n * n) + (j * n) + (k);
+					cout << index << endl;
+					Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+					PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					//PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				}
+			}
+			// j = 0
+			for (int i = 1;i < n - 1;i++) {
+				for (int k = 1; k < n - 1;k++) {
+					int j = 0;
+					Fx = Fy = Fz = 0;
+					index = (i * n * n) + (j * n) + (k);
+					cout << index << endl;
+					Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+					PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					//MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				}
+			}
+			// j = n
+			for (int i = 1;i < n - 1;i++) {
+				for (int k = 1; k < n - 1;k++) {
+					int j = n-1;
+					Fx = Fy = Fz = 0;
+					index = (i * n * n) + (j * n) + (k);
+					cout << index << endl;
+					Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+					//PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				}
+			}
+			// k = 0
+			for (int i = 1;i < n - 1;i++) {
+				for (int j = 1; j < n - 1;j++) {
+					int k = 0;
+					Fx = Fy = Fz = 0;
+					index = (i * n * n) + (j * n) + (k);
+					cout << index << endl;
+					Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					//Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+					PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				}
+			}
+			//k = n
+			for (int i = 1;i < n - 1;i++) {
+				for (int j = 1; j < n - 1;j++) {
+					int k = n-1;
+					Fx = Fy = Fz = 0;
+					index = (i * n * n) + (j * n) + (k);
+					cout << index << endl;
+					//Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+					PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+					VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				}
+			}
+				
+			//edges looping over k
+			// i = 0 j =0 
+			for (int k = 1; k < n - 1;k++) {
+				int i = 0;
+				int j = 0;
+				Fx = Fy = Fz = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+			}
+			// i = n j =0 
+			for (int k = 1; k < n - 1;k++) {
+				int i = n-1;
+				int j = 0;
+				Fx = Fy = Fz = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+			}
+			// i = n j = n
+			for (int k = 1; k < n - 1;k++) {
+				int i = n-1;
+				int j = n-1;
+				Fx = Fy = Fz = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+			}
+			// i = 0 j = n
+			for (int k = 1; k < n - 1;k++) {
+				int i = 0;
+				int j = n-1;
+				Fx = Fy = Fz = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+			}
+
+			// edges looping over i
+			// j = 0 k = 0
+			for (int i = 1; i < n - 1;i++) {
+				int j = 0;
+				int k = 0;
+				Fx = Fy = Fz = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+			}
+			// j = 0 k = n
+			for (int i = 1; i < n - 1;i++) {
+				int j = 0;
+				int k = n-1;
+				Fx = Fy = Fz = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				//Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+			}
+			// j = n k = n
+			for (int i = 1; i < n - 1;i++) {
+				int j = n-1;
+				int k = n-1;
+				Fx = Fy = Fz = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				//Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+			}
+			// j = 0 k = n
+			for (int i = 1; i < n - 1;i++) {
+				int j = 0;
+				int k = n-1;
+				Fx = Fy = Fz = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				//Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+			}
+
+			// edges looping over j
+			// i = 0 k = 0
+			for (int j = 1; j < n - 1;j++) {
+				int i = 0;
+				int k = 0;
+				Fx = Fy = Fz = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+			}
+			// i = 0 k = n
+			for (int j = 1; j < n - 1;j++) {
+				int i = 0;
+				int k = n-1;
+				Fx = Fy = Fz = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				//Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+			}
+			// i = n k = n
+			for (int j = 1; j < n - 1;j++) {
+				int i = n-1;
+				int k = n-1;
+				Fx = Fy = Fz = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				//Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+			}
+			// i = n k = 0
+			for (int j = 1; j < n - 1;j++) {
+				int i = n-1;
+				int k = 0;
+				Fx = Fy = Fz = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+			}
+
+
+
+			// point i =0 j =0 k = 0
+			bool cont = true;
+			while (cont == true) {
+				int i = 0;
+				int j = 0;
+				int k = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				cont = false;
+			}
+			// point i =n j=0 k=0
+			 cont = true;
+			while (cont == true) {
+				int i = n-1;
+				int j = 0;
+				int k = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				cont = false;
+			}
+			// point i =n j=n k=0
+			cont = true;
+			while (cont == true) {
+				int i = n-1;
+				int j = n-1;
+				int k = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				cont = false;
+			}
+			// point i =n j=n k=n
+			cont = true;
+			while (cont == true) {
+				int i = n-1;
+				int j = n-1;
+				int k = n-1;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				//Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				cont = false;
+			}
+			// point i =0 j=n k=n
+			cont = true;
+			while (cont == true) {
+				int i = 0;
+				int j = n-1;
+				int k = n-1;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				//Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				cont = false;
+			}
+			// point i =0 j=0 k=n
+			cont = true;
+			while (cont == true) {
+				int i = 0;
+				int j = 0;
+				int k = n-1;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				//Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				cont = false;
+			}
+			// i= 0 j = n k =0
+			cont = true;
+			while (cont == true) {
+				int i = 0;
+				int j = n-1;
+				int k = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				cont = false;
+			}
+			// i= n j = 0 k =n
+			cont = true;
+			while (cont == true) {
+				int i = 0;
+				int j = n-1;
+				int k = 0;
+				index = (i * n * n) + (j * n) + (k);
+				cout << index << endl;
+				//Plus1Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				Minus1Neighbors(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusNNeighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				PlusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				//MinusN2Neighbor(X, Y, Z, index, l, Fx, Fy, Fz);
+				VerletMethod(X, Y, Z, index, l, Fx, Fy, Fz, m);
+				cont = false;
+			}
+
+		}
+		for (int l = 2; l <= 5; l++) {
+
+
+		
+			for (int i = 1;i <= n - 1;i++) {
+
+				for (int j = 1; j <= n - 1;j++) {
+
+					for (int k = 1; k <= n - 1;k++) {
+						index = i * n * n + j * n + k;
+
+						cout << "index: " << index << " time: " << l << " X: " << X[index][l] << " Y: " << Y[index][l] << " Z: " << Z[index][l] << endl;
+					}
+				}
+			}
+		}
+	}
