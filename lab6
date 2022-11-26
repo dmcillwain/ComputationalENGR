@@ -1,0 +1,114 @@
+#include "projectsix.h"
+#include <iostream>
+#include <fstream>
+using namespace std;
+const double c1 = .01;
+const double c2 = 1;
+const int N = 10;
+int Nhalf = N/2;
+const int Nt = 20.0;
+ int it = 1;
+ double dt = Nt / it;
+double Z[N][N][Nt];
+double diffTemp[N][N];
+double dx = 1, dy = 1;
+ // function to calculate Laplace
+void Laplace(double Z[N][N][Nt],double diffTemp[N][N],double N,double Nt,int it) {
+	cout << "Starting Laplace" << endl;
+	for (int i = 1;i < N - 1;i++) {
+		for (int j = 1; j < N - 1; j++) {
+
+			diffTemp[i][j] = Z[i + 1][j][it] - 2 * Z[i][j][it] + Z[i - 1][j][it]/(dx*dx);
+			diffTemp[i][j] = diffTemp[i][j] + Z[i][j+1][it] - 2 * Z[i][j][it] + Z[i][j - 1][it] / (dy * dy);
+		}
+	}
+}
+
+//function to calculate time step 1
+void timeStepOne(double Z[N][N][Nt], double diffTemp[N][N],double N,double Nt,int it){
+	cout << "Starting step one" << endl;
+	 Laplace(Z, diffTemp, N, Nt, 0);
+
+	 for (int i = 0;i <= N - 1;i++) {
+		 for (int j = 0; j <= N - 1;j++) {
+			 Z[i][j][1] = Z[i][j][0] + .5 * c1 * c1 * diffTemp[i][j] * dt*dt;
+		 }
+	 }
+}
+
+//function to solve using verlet method
+void verletMethod(double Z[N][N][Nt], double diffTemp[N][N], double N, double Nt, int it) {
+	cout << "Starting Verlet" << endl;
+	for (int l = 2; l < Nt;l++) {
+
+		 Laplace(Z, diffTemp, N, Nt, l-1);
+
+		 for(int i = 1;i<N-1;i++){
+			 for (int j = 1;j < N - 1;j++) {
+				 //Z with driving wave
+				 Z[0][j][l] = sin((360 / Nt) * dt * l);
+				 // Z using lapace
+				 if (i < 4) {
+					 Z[i][j][l] = 2 * Z[i][j][l - 1] - Z[i][j][l - 2] + c1 * c1 * diffTemp[i][j] * dt * dt;
+					 cout << "x: " << i << " y: " << j << " Z: " << Z[i][j][l] << endl;
+					 // represents a wall at i = 5 from j = 1 to j = 3
+				 }else if(i == 5 && j < 4) {
+					 //Z[i][j][l] = 2 * Z[i][j][l - 1] - Z[i][j][l - 2] + c2 * c2 * diffTemp[i][j] * dt * dt;
+					 Z[i][j][l] = 0;
+					 cout << "x: " << i << " y: " << j << " Z: " << Z[i][j][l] << endl;
+				 }
+				 // represents a wall at i =5 from j = 6 to N
+				 else if (i == 5 && j > 5 && j <7) {
+					 //Z[i][j][l] = 2 * Z[i][j][l - 1] - Z[i][j][l - 2] + c2 * c2 * diffTemp[i][j] * dt * dt;
+					 Z[i][j][l] = 0;
+					 cout << "x: " << i << " y: " << j << " Z: " << Z[i][j][l] << endl;
+				 }
+				 else if (i == 5 && j > 7) {
+					 //Z[i][j][l] = 2 * Z[i][j][l - 1] - Z[i][j][l - 2] + c2 * c2 * diffTemp[i][j] * dt * dt;
+					 Z[i][j][l] = 0;
+					 cout << "x: " << i << " y: " << j << " Z: " << Z[i][j][l] << endl;
+				 }
+				 // Takes care of calculating the slit at I = 5 and j from 4 to 5
+				 else {
+					 Z[i][j][l] = 2 * Z[i][j][l - 1] - Z[i][j][l - 2] + c1 * c1 * diffTemp[i][j] * dt * dt;
+					 cout << "x: " << i << " y: " << j << " Z: " << Z[i][j][l] << endl;
+				 }
+			}
+		 }
+
+	}
+}
+int main()
+{
+	ofstream myfile;
+	for (int i = 0; i <= N - 1;i++) {
+		for (int j = 0;j <= N - 1;j++) {
+			Z[i][j][0] = 0;
+			Z[0][j][0] = 1000*sin(3.14*.01*i / N)*sin(3.14 * .01 * j / N);
+			//cout <<"x: "<< i << " y: " << j << " Z: " << Z[i][j][0] << endl;
+		}
+	}
+	
+	
+
+		timeStepOne(Z, diffTemp, N, Nt, it);
+
+		verletMethod(Z, diffTemp, N, Nt, it);
+
+		myfile.open("positions.txt", ios::out | ios::app);
+		if (myfile.is_open()) {
+
+			for (int l = 0; l <= Nt - 1;l++) {
+				for (int i = 0; i <= N - 1;i++) {
+					for (int j = 0; j <= N - 1;j++) {
+						myfile <<   i << " " << j << " " << Z[i][j][l] << endl;
+					}
+				}
+			}
+			
+			myfile.close();
+		}
+		else {
+			cout << "File wasnt opeded";
+		}
+}
