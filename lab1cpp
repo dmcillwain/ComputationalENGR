@@ -16,9 +16,9 @@ int main()
 	// Defining output file for matlab (from https://cplusplus.com/doc/tutorial/files/)
 	ofstream myfile;
 
-	myfile.open("data.txt", ios::out | ios::app);
+	
 	// n sets up the array size and duration of the model
-	const int n = 100;
+	const int n = 2000;
 	double S[n];
 	double I[n];
 	double R[n];
@@ -32,26 +32,18 @@ int main()
 	double gamma = 10;
 	double R0 = 2.0;
 	double beta = R0 / (gamma * (I[0] * S[0]));
+
 	double alpha = 10000000000000;
 	double epsilon = 0;
 	double f = .01;
 	double  ds, di, dr, dD;
 	double dt = 150.0 / n;
-	myfile.open("eular.txt", ios::out | ios::app);
-	if (myfile.is_open()) {
-		myfile << S[0] << " ";
-		myfile << I[0] << " ";
-		myfile << R[0] << endl;
-
-	}
-	else {
-		cout << "File wasnt opeded";
-	}
+	
 
 
 	// for loop to handle eulers method.
 	for (int j = 1;j < n;j++) {
-
+		
 		ds = -beta * S[j - 1] * I[j - 1] + (1.0 / alpha) * R[j - 1] + epsilon;
 		di = beta * S[j - 1] * I[j - 1] - (1.0 / gamma) * I[j - 1];
 		dr = (1 / gamma) * (1 - f) * I[j - 1] - (1.0 / alpha) * R[j - 1];
@@ -60,13 +52,19 @@ int main()
 		S[j] = S[j - 1] + ds * dt;
 		I[j] = I[j - 1] + di * dt;
 		R[j] = R[j - 1] + dr * dt;
-
-
 	}
-	for (int j = 0;j < n;j++) {
+	
 
-		cout << j * dt << ", " << S[j] << ",	" << I[j] << ",	" << R[j] << endl;
-		myfile << S[j] << "	" << I[j] << "	" << R[j] << endl;
+	myfile.open("euler.txt", ios::out | ios::app);
+	if (myfile.is_open()) {
+		for (int j = 0;j < n;j++) {
+			cout << j * dt << ", " << S[j] << ", " << I[j] << ",	" << R[j] << endl;
+			myfile << j * dt << ", " << S[j] << ", " << I[j] << ",	" << R[j] << endl;
+
+		}
+	}
+	else {
+		cout << "File wasnt opeded";
 	}
 	myfile.close();
 
@@ -74,6 +72,7 @@ int main()
 	double h = dt / 2;
 	//Start of RK2
 	// for loop to handle RK2 method.
+
 	for (int j = 1;j < n;j++) {
 
 		ds = -beta * S[j - 1] * I[j - 1] + (1.0 / alpha) * R[j - 1] + epsilon;
@@ -94,5 +93,73 @@ int main()
 		I[j] = I[j - 1] + di * dt;
 		R[j] = R[j - 1] + dr * dt;
 	}
+	myfile.open("RK2.txt", ios::out | ios::app);
+	if (myfile.is_open()) {
+		for (int j = 0;j < n;j++) {
+			cout <<  j * dt << ", " << S[j] << ",	" << I[j] << ",	" << R[j] << endl;
+			myfile << j*dt << " ";
+			myfile << S[j] << " ";
+			myfile << I[j] << " ";
+			myfile << R[j] << endl;
+
+		}
+	}
+	else {
+		cout << "File wasnt opeded";
+	}
+	myfile.close();
+	for (int j = 1;j < n;j++) {
+		//1
+		double ds1 = -beta * S[j - 1] * I[j - 1] + (1.0 / alpha) * R[j - 1] + epsilon;
+		double di1 = beta * S[j - 1] * I[j - 1] - (1.0 / gamma) * I[j - 1];
+		double dr1 = (1 / gamma) * (1 - f) * I[j - 1] - (1.0 / alpha) * R[j - 1];
+		double dD1 = (1 / gamma) * f * I[j - 1];
+		//2
+		S[j] = S[j - 1] + ds1 * h;
+		I[j] = I[j - 1] + di1 * h;
+		R[j] = R[j - 1] + dr1 * h;
+		//3
+		double ds2 = -beta * S[j] * I[j] + (1.0 / alpha) * R[j] + epsilon;
+		double di2 = beta * S[j] * I[j] - (1.0 / gamma) * I[j];
+		double dr2 = (1 / gamma) * (1 - f) * I[j] - (1.0 / alpha) * R[j];
+		double dD2 = (1 / gamma) * f * I[j];
+		//2
+		S[j] = S[j] + ds2 * h;
+		I[j] = I[j] + di2 * h;
+		R[j] = R[j] + dr2 * h;
+		//3
+		double ds3 = -beta * S[j] * I[j] + (1.0 / alpha) * R[j] + epsilon;
+		double di3 = beta * S[j] * I[j] - (1.0 / gamma) * I[j];
+		double dr3 = (1 / gamma) * (1 - f) * I[j] - (1.0 / alpha) * R[j];
+		double dD3 = (1 / gamma) * f * I[j];
+		//2
+		S[j] = S[j] + ds3 * h;
+		I[j] = I[j] + di3 * h;
+		R[j] = R[j] + dr3 * h;
+		//3
+		double ds4 = -beta * S[j] * I[j] + (1.0 / alpha) * R[j] + epsilon;
+		double di4 = beta * S[j] * I[j] - (1.0 / gamma) * I[j];
+		double dr4 = (1 / gamma) * (1 - f) * I[j] - (1.0 / alpha) * R[j];
+		double dD4 = (1 / gamma) * f * I[j];
+		//8
+		S[j] = S[j] + (1 / 6)(ds1 + 2 * ds2 + 2 * ds3 + ds4) * dt;
+		I[j] = I[j] + (1 / 6)(di1 + 2 * di2 + 2 * di3 + di4) * dt;
+		R[j] = R[j] + (1 / 6)(dr1 + 2 * dr2 + 2 * dr3 + dr4) * dt;
+	}
+	myfile.open("RK4.txt", ios::out | ios::app);
+	if (myfile.is_open()) {
+		for (int j = 0;j < n;j++) {
+			cout << j * dt << ", " << S[j] << ",	" << I[j] << ",	" << R[j] << endl;
+			myfile << j * dt << " ";
+			myfile << S[j] << " ";
+			myfile << I[j] << " ";
+			myfile << R[j] << endl;
+
+		}
+	}
+	else {
+		cout << "File wasnt opeded";
+	}
+	myfile.close();
 	return 0;
 }
